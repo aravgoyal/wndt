@@ -1,0 +1,29 @@
+services:
+  app:
+    build: ./app
+    container_name: web-app-wndt  
+    hostname: web-app
+    volumes: ['./app/src:/appcode']
+    ports:
+      - 8501:8501
+
+  api:
+    build: ./api
+    container_name: web-api-wndt
+    hostname: web-api
+    volumes: ['./api:/apicode']
+    ports:
+      - 4001:4001
+
+  db:
+    env_file:
+      - ./api/.env
+    image: mysql:9
+    container_name: mysql_db-wndt
+    hostname: db
+    volumes:
+      - ./database-files:/docker-entrypoint-initdb.d/:ro
+    ports:
+      - 3201:3306
+
+
