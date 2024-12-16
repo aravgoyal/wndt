@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 from users.users_routes import users
 from teams.teams_routes import teams
+from scenarios.scenarios_routes import scenarios
+from points.points_routes import points
 
 def create_app():
     app = Flask(__name__)
@@ -26,8 +28,10 @@ def create_app():
     db.init_app(app)
 
     app.logger.info('current_app(): registering blueprints with Flask app object.')   
-    app.register_blueprint(users,   url_prefix='/users')
-    app.register_blueprint(teams,   url_prefix='/teams')
+    app.register_blueprint(users,     url_prefix='/users')
+    app.register_blueprint(teams,     url_prefix='/teams')
+    app.register_blueprint(scenarios, url_prefix='/scenarios')
+    app.register_blueprint(points,    url_prefix='/points')
 
     return app
 

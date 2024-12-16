@@ -7,7 +7,7 @@ logging.basicConfig(format='%(filename)s:%(lineno)s:%(levelname)s -- %(message)s
 logger = logging.getLogger(__name__)
 
 # Flask API base URL
-BASE_URL = "http://web-api:4001"  # Change this if your Flask app is running elsewhere
+BASE_URL = "http://web-api:4001"
 
 # Set up the page layout
 st.set_page_config(layout="wide")
