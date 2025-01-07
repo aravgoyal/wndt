@@ -5,6 +5,9 @@ from flask import make_response
 from flask import current_app
 from backend.db_connection import db
 
+from db_files.models import Team
+from db_files.database import db_session
+
 from flask_jwt_extended import jwt_required
 
 # Create a new Blueprint for teams
@@ -22,23 +25,14 @@ def create_team():
     if not name or not user_id:
         return jsonify({"error": "Missing required fields"}), 400
 
-    query = '''
-        INSERT INTO Teams (name)
-        VALUES (%s)
-    '''
-    cursor = db.cursor()
-    cursor.execute(query, (name,))
-    team_id = cursor.lastrowid 
+    team = Team(name=name)
+    db_session.add(team)
+    db_session.commit()
 
-    query = '''
-        INSERT INTO UserTeams (user_id, team_id)
-        VALUES (%s, %s)
-    '''
-    cursor.execute(query, (user_id, team_id))
-
-    db.commit()
-    cursor.close()
-    db.close()
+    team_id = Team.query.filter_by(name=name).first().id
+    user = User.query.filter_by(id=user_id).first()
+    user.team_id = team_id
+    db_session.commit()
 
     return make_response(jsonify({'message': 'Team created successfully!', 'team_id': team_id}), 201)
 
@@ -48,12 +42,7 @@ def create_team():
 def view_teams():
     current_app.logger.info('GET /teams route')
 
-    cursor = db.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM Teams')
-    teams = cursor.fetchall()
-
-    cursor.close()
-    db.close()
+    teams = Team.query.all()
 
     return jsonify(teams), 200
 
@@ -69,27 +58,9 @@ def join_team():
     if not user_id or not team_id:
         return jsonify({"error": "Missing required fields"}), 400
 
-    cursor = db.cursor()
-    query = '''
-        SELECT * FROM UserTeams WHERE user_id = %s AND team_id = %s
-    '''
-    cursor.execute(query, (user_id, team_id))
-    membership = cursor.fetchone()
-
-    if membership:
-        cursor.close()
-        db.close()
-        return jsonify({"error": "User is already a member of this team"}), 400
-
-    query = '''
-        INSERT INTO UserTeams (user_id, team_id)
-        VALUES (%s, %s)
-    '''
-    cursor.execute(query, (user_id, team_id))
-
-    db.commit()
-    cursor.close()
-    db.close()
+    user = User.query.filter_by(id=user_id).first()
+    user.team_id = team_id
+    db_session.commit()
 
     return make_response(jsonify({'message': 'User successfully joined the team!'}), 200)
 
@@ -99,17 +70,6 @@ def join_team():
 def view_team_members(team_id):
     current_app.logger.info(f'GET /teams/{team_id}/members route')
 
-    cursor = db.cursor(dictionary=True)
-    query = '''
-        SELECT u.id, u.first_name, u.last_name, u.email 
-        FROM Users u
-        JOIN UserTeams ut ON u.id = ut.user_id
-        WHERE ut.team_id = %s
-    '''
-    cursor.execute(query, (team_id,))
-    members = cursor.fetchall()
-
-    cursor.close()
-    db.close()
+    members = User.query.filter_by(team_id=team_id).all()
 
     return jsonify(members), 200
