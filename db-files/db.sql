@@ -9,7 +9,8 @@ CREATE TABLE Users (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100),
     email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    FOREIGN KEY (team_id) REFERENCES Teams(id) ON DELETE SET NULL
 );
 
 CREATE TABLE Teams (
@@ -36,12 +37,4 @@ CREATE TABLE GeoReferencedPoints (
     longitude DECIMAL(9,6) NOT NULL,
     simulation_scenario_id INT NOT NULL,
     FOREIGN KEY (simulation_scenario_id) REFERENCES SimulationScenarios(id) ON DELETE CASCADE
-);
-
-CREATE TABLE UserTeams (
-    user_id INT NOT NULL,
-    team_id INT NOT NULL,
-    PRIMARY KEY (user_id, team_id),
-    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
-    FOREIGN KEY (team_id) REFERENCES Teams(id) ON DELETE CASCADE
 );
