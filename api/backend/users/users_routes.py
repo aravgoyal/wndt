@@ -5,6 +5,10 @@ from flask import make_response
 from flask import current_app
 import hashlib
 from backend.db_connection import db
+from db_files.database import db_session
+from db_files.models import User
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import SELECT
 
 # Create a new Blueprint for users
 users = Blueprint('users', __name__)
@@ -28,18 +32,24 @@ def add_user():
 
     hashed_password = hash_password(password)
 
-    query = '''
-        INSERT INTO Users (first_name, last_name, email, password)
-        VALUES (%s, %s, %s, %s)
-    '''
-    data = (first_name, last_name, email, hashed_password)
-    cursor = db.cursor()
-    cursor.execute(query, data)
-    db.commit()
-    cursor.close()
-    db.close()
+    new_user = User(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        password=hashed_password
+    )
 
-    return make_response(jsonify({'message': 'User added successfully!'}), 201)
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+        return make_response(jsonify({'message': 'User added successfully!'}), 201)
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Email already exists"}), 409
+    except Exception as e:
+        current_app.logger.error(f"Error adding user: {e}")
+        db.session.rollback()
+        return jsonify({"error": "An error occurred while adding the user"}), 500
 
 # Login user
 @users.route('/login', methods=['POST'])
@@ -52,31 +62,20 @@ def login_user():
     if not email or not password:
         return jsonify({"error": "Missing required fields"}), 400
 
-    cursor = db.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM Users WHERE email = %s', (email,))
-    user = cursor.fetchone()
+    user = User.query.filter_by(email=email).first()
     
-    if user and user['password'] == hash_password(password):
-        cursor.close()
-        db.close()
+    if user and user.password == hash_password(password):
+        # add jwt auth here
         return make_response(jsonify({"message": "Login successful!", "user_id": user['id']}), 200)
     
-    cursor.close()
-    db.close()
     return jsonify({"error": "Invalid email or password"}), 401
 
-# Route to get user by ID (for example purposes)
+# Get user info
 @users.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
-    cursor = db.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM Users WHERE id = %s', (user_id,))
-    user = cursor.fetchone()
+    user = User.query.filter_by(id=user_id).first()
     
     if user:
-        cursor.close()
-        db.close()
         return jsonify(user), 200
     
-    cursor.close()
-    db.close()
     return jsonify({"error": "User not found"}), 404
