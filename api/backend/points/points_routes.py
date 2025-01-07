@@ -2,6 +2,12 @@ from flask import Blueprint
 from flask import request, jsonify, make_response, current_app
 from backend.db_connection import db
 
+from db_files.models import Point
+from db_files.database import db_session
+
+from sqlalchemy import update, delete
+from geoalchemy2 import Geometry
+
 from flask_jwt_extended import jwt_required
 
 # Create a new Blueprint for points
@@ -12,29 +18,27 @@ points = Blueprint('points', __name__)
 @jwt_required()
 def create_point():
     current_app.logger.info('POST /points route')
-    point_info = request.json
-    name = point_info.get('name')
-    latitude = point_info.get('latitude')
-    longitude = point_info.get('longitude')
-    scenario_id = point_info.get('simulation_scenario_id')
+    info = request.json
+    scenario_id = info.get('simulation_scenario_id')
+    name = info.get('name')
+    latitude = info.get('latitude')
+    longitude = info.get('longitude')
 
-    if not name or not latitude or not longitude or not scenario_id:
+    if not scenario_id or not name or not latitude or not longitude:
         return jsonify({"error": "Missing required fields"}), 400
 
-    query = '''
-        INSERT INTO GeoReferencedPoints (name, latitude, longitude, simulation_scenario_id)
-        VALUES (%s, %s, %s, %s)
-    '''
-    data = (name, latitude, longitude, scenario_id)
+    geom = Geometry(f'POINT({latitude} {longitude})', srid=4326)
 
-    cursor = db.cursor()
-    cursor.execute(query, data)
-    point_id = cursor.lastrowid
-    db.commit()
-    cursor.close()
-    db.close()
+    point = Point(
+        scenario_id=scenario_id,
+        name=name,
+        geom=geom
+    )
 
-    return make_response(jsonify({'message': 'Point created successfully!', 'point_id': point_id}), 201)
+    db_session.add(point)
+    db_session.commit()
+
+    return make_response(jsonify({'message': 'Point created successfully!'}), 201)
 
 # Get all geo-referenced points
 @points.route('/view', methods=['GET'])
@@ -42,12 +46,7 @@ def create_point():
 def get_all_points():
     current_app.logger.info('GET /points route')
 
-    cursor = db.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM GeoReferencedPoints')
-    points = cursor.fetchall()
-
-    cursor.close()
-    db.close()
+    points = Point.query.all()
 
     return jsonify(points), 200
 
@@ -57,15 +56,7 @@ def get_all_points():
 def get_points_by_scenario(scenario_id):
     current_app.logger.info(f'GET /points/scenario/{scenario_id} route')
 
-    cursor = db.cursor(dictionary=True)
-    query = '''
-        SELECT * FROM GeoReferencedPoints WHERE simulation_scenario_id = %s
-    '''
-    cursor.execute(query, (scenario_id,))
-    points = cursor.fetchall()
-
-    cursor.close()
-    db.close()
+    points = Point.query.filter_by(scenario_id=scenario_id).all()
 
     return jsonify(points), 200
 
@@ -82,24 +73,12 @@ def update_point(point_id):
     if not name or not latitude or not longitude:
         return jsonify({"error": "Missing required fields"}), 400
 
-    query = '''
-        UPDATE GeoReferencedPoints
-        SET name = %s, latitude = %s, longitude = %s
-        WHERE id = %s
-    '''
-    data = (name, latitude, longitude, point_id)
+    geom = Geometry(f'POINT({latitude} {longitude})', srid=4326)
+    updated = update(Point).where(Point.id == point_id).values(name=name, geom=geom)
 
-    cursor = db.cursor()
-    cursor.execute(query, data)
-    db.commit()
+    db_session.execute(updated)
+    db_session.commit()
 
-    if cursor.rowcount == 0:
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Point not found"}), 404
-
-    cursor.close()
-    db.close()
     return make_response(jsonify({'message': 'Point updated successfully!'}), 200)
 
 # Delete a geo-referenced point
@@ -108,16 +87,9 @@ def update_point(point_id):
 def delete_point(point_id):
     current_app.logger.info(f'DELETE /points/{point_id} route')
 
-    query = 'DELETE FROM GeoReferencedPoints WHERE id = %s'
-    cursor = db.cursor()
-    cursor.execute(query, (point_id,))
-    db.commit()
+    deleted = delete(Point).where(Point.id == point_id)
 
-    if cursor.rowcount == 0:
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Point not found"}), 404
-
-    cursor.close()
-    db.close()
+    db_session.execute(deleted)
+    db_session.commit()
+    
     return make_response(jsonify({'message': 'Point deleted successfully!'}), 200)
