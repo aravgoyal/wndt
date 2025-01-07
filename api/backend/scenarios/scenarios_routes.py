@@ -2,6 +2,11 @@ from flask import Blueprint
 from flask import request, jsonify, make_response, current_app
 from backend.db_connection import db
 
+from db_files.models import Scenario
+from db_files.database import db_session
+
+from sqlalchemy import update, delete
+
 from flask_jwt_extended import jwt_required
 
 # Create a new Blueprint for scenarios
@@ -15,27 +20,25 @@ def create_scenario():
     scenario_info = request.json
     visibility = scenario_info.get('visibility')
     frequency = scenario_info.get('frequency')
-    scenario_type = scenario_info.get('type')
-    map_center_lat = scenario_info.get('map_center_lat')
-    map_center_long = scenario_info.get('map_center_long')
+    scenario_type = scenario_info.get('scenario_type')
+    map_center = scenario_info.get('map_center')
     map_size = scenario_info.get('map_size')
     user_id = scenario_info.get('user_id')
 
     if not visibility or not user_id:
         return jsonify({"error": "Missing required fields"}), 400
 
-    query = '''
-        INSERT INTO SimulationScenarios (visibility, frequency, type, map_center_lat, map_center_long, map_size, user_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-    '''
-    data = (visibility, frequency, scenario_type, map_center_lat, map_center_long, map_size, user_id)
+    scenario = Scenario(
+        visibility=visibility,
+        frequency=frequency,
+        scenario_type=scenario_type,
+        map_center=map_center,
+        map_size=map_size,
+        user_id=user_id
+    )
 
-    cursor = db.cursor()
-    cursor.execute(query, data)
-    scenario_id = cursor.lastrowid
-    db.commit()
-    cursor.close()
-    db.close()
+    db_session.add(scenario)
+    db_session.commit()
 
     return make_response(jsonify({'message': 'Scenario created successfully!', 'scenario_id': scenario_id}), 201)
 
@@ -45,12 +48,7 @@ def create_scenario():
 def get_all_scenarios():
     current_app.logger.info('GET /scenarios route')
 
-    cursor = db.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM SimulationScenarios')
-    scenarios = cursor.fetchall()
-
-    cursor.close()
-    db.close()
+    scenarios = Scenario.query.all()
 
     return jsonify(scenarios), 200
 
@@ -60,18 +58,11 @@ def get_all_scenarios():
 def get_scenario_by_id(scenario_id):
     current_app.logger.info(f'GET /scenarios/{scenario_id} route')
 
-    cursor = db.cursor(dictionary=True)
-    query = 'SELECT * FROM SimulationScenarios WHERE id = %s'
-    cursor.execute(query, (scenario_id,))
-    scenario = cursor.fetchone()
+    scenario = Scenario.query.filter_by(id=scenario_id).first()
 
     if scenario:
-        cursor.close()
-        db.close()
         return jsonify(scenario), 200
 
-    cursor.close()
-    db.close()
     return jsonify({"error": "Scenario not found"}), 404
 
 # Update a simulation scenario
@@ -82,32 +73,17 @@ def update_scenario(scenario_id):
     scenario_info = request.json
     visibility = scenario_info.get('visibility')
     frequency = scenario_info.get('frequency')
-    scenario_type = scenario_info.get('type')
-    map_center_lat = scenario_info.get('map_center_lat')
-    map_center_long = scenario_info.get('map_center_long')
+    scenario_type = scenario_info.get('scenario_type')
+    map_center = scenario_info.get('map_center')
     map_size = scenario_info.get('map_size')
 
     if not visibility:
         return jsonify({"error": "Missing required fields"}), 400
 
-    query = '''
-        UPDATE SimulationScenarios
-        SET visibility = %s, frequency = %s, type = %s, map_center_lat = %s, map_center_long = %s, map_size = %s
-        WHERE id = %s
-    '''
-    data = (visibility, frequency, scenario_type, map_center_lat, map_center_long, map_size, scenario_id)
-
-    cursor = db.cursor()
-    cursor.execute(query, data)
-    db.commit()
-
-    if cursor.rowcount == 0:
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Scenario not found"}), 404
-
-    cursor.close()
-    db.close()
+    updated = update(Scenario).where(Scenario.id == scenario_id).values(visibility=visibility, frequency=frequency, scenario_type=scenario_type, map_center=map_center, map_size=map_size)
+    db_session.execute(updated)
+    db_session.commit()
+    
     return make_response(jsonify({'message': 'Scenario updated successfully!'}), 200)
 
 # Delete a simulation scenario
@@ -116,16 +92,8 @@ def update_scenario(scenario_id):
 def delete_scenario(scenario_id):
     current_app.logger.info(f'DELETE /scenarios/{scenario_id} route')
 
-    query = 'DELETE FROM SimulationScenarios WHERE id = %s'
-    cursor = db.cursor()
-    cursor.execute(query, (scenario_id,))
-    db.commit()
-
-    if cursor.rowcount == 0:
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Scenario not found"}), 404
-
-    cursor.close()
-    db.close()
+    deleted = delete(Scenario).where(Scenario.id == scenario_id)
+    db_session.execute(deleted)
+    db_session.commit()
+    
     return make_response(jsonify({'message': 'Scenario deleted successfully!'}), 200)
