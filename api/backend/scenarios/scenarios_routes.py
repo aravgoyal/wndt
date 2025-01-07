@@ -2,11 +2,14 @@ from flask import Blueprint
 from flask import request, jsonify, make_response, current_app
 from backend.db_connection import db
 
+from flask_jwt_extended import jwt_required
+
 # Create a new Blueprint for scenarios
 scenarios = Blueprint('scenarios', __name__)
 
 # Create a new simulation scenario
 @scenarios.route('/new', methods=['POST'])
+@jwt_required()
 def create_scenario():
     current_app.logger.info('POST /scenarios route')
     scenario_info = request.json
@@ -38,6 +41,7 @@ def create_scenario():
 
 # Get all simulation scenarios
 @scenarios.route('/view', methods=['GET'])
+@jwt_required()
 def get_all_scenarios():
     current_app.logger.info('GET /scenarios route')
 
@@ -52,6 +56,7 @@ def get_all_scenarios():
 
 # Get a specific simulation scenario by ID
 @scenarios.route('/view/<int:scenario_id>', methods=['GET'])
+@jwt_required()
 def get_scenario_by_id(scenario_id):
     current_app.logger.info(f'GET /scenarios/{scenario_id} route')
 
@@ -71,6 +76,7 @@ def get_scenario_by_id(scenario_id):
 
 # Update a simulation scenario
 @scenarios.route('/update/<int:scenario_id>', methods=['PUT'])
+@jwt_required()
 def update_scenario(scenario_id):
     current_app.logger.info(f'PUT /scenarios/{scenario_id} route')
     scenario_info = request.json
@@ -106,6 +112,7 @@ def update_scenario(scenario_id):
 
 # Delete a simulation scenario
 @scenarios.route('/delete/<int:scenario_id>', methods=['DELETE'])
+@jwt_required()
 def delete_scenario(scenario_id):
     current_app.logger.info(f'DELETE /scenarios/{scenario_id} route')
 

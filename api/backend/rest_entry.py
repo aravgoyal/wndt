@@ -9,12 +9,18 @@ from teams.teams_routes import teams
 from scenarios.scenarios_routes import scenarios
 from points.points_routes import points
 
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
+
 def create_app():
     app = Flask(__name__)
 
     load_dotenv()
 
-    app.config['SECRET_KEY'] = 'someCrazyS3cR3T!Key.!'
+    app.config['SECRET_KEY'] = 'W!0TS3CReTk3Y.!@#'
+    jwt = JWTManager(app)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
     app.config['MYSQL_DATABASE_USER'] = 'root'

@@ -3,6 +3,12 @@ from flask import request
 from flask import jsonify
 from flask import make_response
 from flask import current_app
+
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
+
 import hashlib
 from backend.db_connection import db
 from db_files.database import db_session
@@ -65,13 +71,14 @@ def login_user():
     user = User.query.filter_by(email=email).first()
     
     if user and user.password == hash_password(password):
-        # add jwt auth here
-        return make_response(jsonify({"message": "Login successful!", "user_id": user['id']}), 200)
+        access_token = create_access_token(identity=email)
+        return make_response(jsonify({"message": "Login successful!", "access_token": access_token}), 200)
     
     return jsonify({"error": "Invalid email or password"}), 401
 
 # Get user info
 @users.route('/users/<int:user_id>', methods=['GET'])
+@jwt_required()
 def get_user(user_id):
     user = User.query.filter_by(id=user_id).first()
     

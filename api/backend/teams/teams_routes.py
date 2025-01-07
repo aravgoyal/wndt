@@ -5,11 +5,14 @@ from flask import make_response
 from flask import current_app
 from backend.db_connection import db
 
+from flask_jwt_extended import jwt_required
+
 # Create a new Blueprint for teams
 teams = Blueprint('teams', __name__)
 
 # Create a new team
 @teams.route('/teams', methods=['POST'])
+@jwt_required()
 def create_team():
     current_app.logger.info('POST /teams route')
     team_info = request.json
@@ -41,6 +44,7 @@ def create_team():
 
 # View all teams
 @teams.route('/view', methods=['GET'])
+@jwt_required()
 def view_teams():
     current_app.logger.info('GET /teams route')
 
@@ -55,6 +59,7 @@ def view_teams():
 
 # Join an existing team
 @teams.route('/join', methods=['POST'])
+@jwt_required()
 def join_team():
     current_app.logger.info('POST /teams/join route')
     join_info = request.json
@@ -90,6 +95,7 @@ def join_team():
 
 # View members of a specific team
 @teams.route('/view/<int:team_id>/members', methods=['GET'])
+@jwt_required()
 def view_team_members(team_id):
     current_app.logger.info(f'GET /teams/{team_id}/members route')
 

@@ -2,11 +2,14 @@ from flask import Blueprint
 from flask import request, jsonify, make_response, current_app
 from backend.db_connection import db
 
+from flask_jwt_extended import jwt_required
+
 # Create a new Blueprint for points
 points = Blueprint('points', __name__)
 
 # Create a new geo-referenced point
 @points.route('/new', methods=['POST'])
+@jwt_required()
 def create_point():
     current_app.logger.info('POST /points route')
     point_info = request.json
@@ -35,6 +38,7 @@ def create_point():
 
 # Get all geo-referenced points
 @points.route('/view', methods=['GET'])
+@jwt_required()
 def get_all_points():
     current_app.logger.info('GET /points route')
 
@@ -49,6 +53,7 @@ def get_all_points():
 
 # Get all points for a specific simulation scenario
 @points.route('/scenario/<int:scenario_id>', methods=['GET'])
+@jwt_required()
 def get_points_by_scenario(scenario_id):
     current_app.logger.info(f'GET /points/scenario/{scenario_id} route')
 
@@ -66,6 +71,7 @@ def get_points_by_scenario(scenario_id):
 
 # Update a geo-referenced point
 @points.route('/update/<int:point_id>', methods=['PUT'])
+@jwt_required()
 def update_point(point_id):
     current_app.logger.info(f'PUT /points/{point_id} route')
     point_info = request.json
@@ -98,6 +104,7 @@ def update_point(point_id):
 
 # Delete a geo-referenced point
 @points.route('/delete/<int:point_id>', methods=['DELETE'])
+@jwt_required()
 def delete_point(point_id):
     current_app.logger.info(f'DELETE /points/{point_id} route')
 
