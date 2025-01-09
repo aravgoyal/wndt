@@ -7,7 +7,7 @@ logging.basicConfig(format='%(filename)s:%(lineno)s:%(levelname)s -- %(message)s
 logger = logging.getLogger(__name__)
 
 # Flask API base URL
-BASE_URL = "http://web-api:4001"
+BASE_URL = "http://web-api-wndt:4000"
 
 # Set up the page layout
 st.set_page_config(layout="wide")
@@ -19,14 +19,16 @@ if "authenticated" not in st.session_state:
 # Function to handle user login
 def login_user(email, password):
     try:
-        response = requests.post(f"{BASE_URL}/login", json={"email": email, "password": password})
+        response = requests.post(f"{BASE_URL}/users/login", json={"email": email, "password": password})
         if response.status_code == 200:
             user_info = response.json()
             st.session_state["authenticated"] = True
             st.session_state["user_id"] = user_info["user_id"]
             st.session_state["email"] = email
-            st.session_state["first_name"] = user_info.get("first_name", "User")
+            st.session_state["first_name"] = user_info["first_name"]
+            st.session_state["access_token"] = user_info["access_token"]
             st.success("Login successful!")
+            st.switch_page('pages/Dashboard.py')
             return True
         else:
             st.error("Invalid email or password. Please try again.")
@@ -38,7 +40,7 @@ def login_user(email, password):
 # Function to handle user registration
 def register_user(first_name, last_name, email, password):
     try:
-        response = requests.post(f"{BASE_URL}/users", json={
+        response = requests.post(f"{BASE_URL}/users/register", json={
             "first_name": first_name, "last_name": last_name,
             "email": email, "password": password
         })

@@ -71,7 +71,7 @@ def login_user():
     
     if user and user.password == hash_password(password):
         access_token = create_access_token(identity=email)
-        return make_response(jsonify({"message": "Login successful!", "access_token": access_token}), 200)
+        return make_response(jsonify({"message": "Login successful!", "access_token": access_token, "user_id": user.id, "first_name": user.first_name}), 200)
     
     return jsonify({"error": "Invalid email or password"}), 401
 
