@@ -2,11 +2,13 @@ from flask import Blueprint
 from flask import request, jsonify, make_response, current_app
 from backend.db_connection import db
 
-from db_files.models import Point
-from db_files.database import db_session
+from backend.db_files.models import GeoPoint
+from backend.db_files.database import db_session
 
 from sqlalchemy import update, delete
 from geoalchemy2 import Geometry
+from flask_sqlalchemy import SQLAlchemy
+from shapely.geometry import Point, mapping
 
 from flask_jwt_extended import jwt_required
 
@@ -19,7 +21,7 @@ points = Blueprint('points', __name__)
 def create_point():
     current_app.logger.info('POST /points route')
     info = request.json
-    scenario_id = info.get('simulation_scenario_id')
+    scenario_id = info.get('scenario_id')
     name = info.get('name')
     latitude = info.get('latitude')
     longitude = info.get('longitude')
@@ -27,12 +29,13 @@ def create_point():
     if not scenario_id or not name or not latitude or not longitude:
         return jsonify({"error": "Missing required fields"}), 400
 
-    geom = Geometry(f'POINT({latitude} {longitude})', srid=4326)
+    geom = Point(longitude, latitude)
+    geojson = mapping(geom)
 
-    point = Point(
+    point = GeoPoint(
         scenario_id=scenario_id,
         name=name,
-        geom=geom
+        geom=geojson
     )
 
     db_session.add(point)
@@ -46,9 +49,10 @@ def create_point():
 def get_all_points():
     current_app.logger.info('GET /points route')
 
-    points = Point.query.all()
+    points = GeoPoint.query.all()
+    points_dict = [point.as_dict() for point in points]
 
-    return jsonify(points), 200
+    return jsonify(points_dict), 200
 
 # Get all points for a specific simulation scenario
 @points.route('/scenario/<int:scenario_id>', methods=['GET'])
@@ -56,9 +60,10 @@ def get_all_points():
 def get_points_by_scenario(scenario_id):
     current_app.logger.info(f'GET /points/scenario/{scenario_id} route')
 
-    points = Point.query.filter_by(scenario_id=scenario_id).all()
+    points = GeoPoint.query.filter_by(scenario_id=scenario_id).all()
+    points_dict = [point.as_dict() for point in points]
 
-    return jsonify(points), 200
+    return jsonify(points_dict), 200
 
 # Update a geo-referenced point
 @points.route('/update/<int:point_id>', methods=['PUT'])
@@ -73,8 +78,9 @@ def update_point(point_id):
     if not name or not latitude or not longitude:
         return jsonify({"error": "Missing required fields"}), 400
 
-    geom = Geometry(f'POINT({latitude} {longitude})', srid=4326)
-    updated = update(Point).where(Point.id == point_id).values(name=name, geom=geom)
+    geom = Point(longitude, latitude)
+    geojson = mapping(geom)
+    updated = update(GeoPoint).where(GeoPoint.id == point_id).values(name=name, geom=geojson)
 
     db_session.execute(updated)
     db_session.commit()
@@ -87,7 +93,7 @@ def update_point(point_id):
 def delete_point(point_id):
     current_app.logger.info(f'DELETE /points/{point_id} route')
 
-    deleted = delete(Point).where(Point.id == point_id)
+    deleted = delete(GeoPoint).where(GeoPoint.id == point_id)
 
     db_session.execute(deleted)
     db_session.commit()

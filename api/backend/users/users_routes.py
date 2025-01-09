@@ -11,10 +11,9 @@ from flask_jwt_extended import JWTManager
 
 import hashlib
 from backend.db_connection import db
-from db_files.database import db_session
-from db_files.models import User
+from backend.db_files.database import db_session
+from backend.db_files.models import User
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import SELECT
 
 # Create a new Blueprint for users
 users = Blueprint('users', __name__)
@@ -46,15 +45,15 @@ def add_user():
     )
 
     try:
-        db.session.add(new_user)
-        db.session.commit()
+        db_session.add(new_user)
+        db_session.commit()
         return make_response(jsonify({'message': 'User added successfully!'}), 201)
     except IntegrityError:
-        db.session.rollback()
+        db_session.rollback()
         return jsonify({"error": "Email already exists"}), 409
     except Exception as e:
         current_app.logger.error(f"Error adding user: {e}")
-        db.session.rollback()
+        db_session.rollback()
         return jsonify({"error": "An error occurred while adding the user"}), 500
 
 # Login user
@@ -77,12 +76,20 @@ def login_user():
     return jsonify({"error": "Invalid email or password"}), 401
 
 # Get user info
-@users.route('/users/<int:user_id>', methods=['GET'])
+@users.route('/view/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
     user = User.query.filter_by(id=user_id).first()
     
     if user:
-        return jsonify(user), 200
+        return jsonify(user.as_dict()), 200
     
     return jsonify({"error": "User not found"}), 404
+
+# Get all user info
+@users.route('/view', methods=['GET'])
+@jwt_required()
+def get_all_users():
+    users = User.query.all()
+    users_dict = [user.as_dict() for user in users]
+    return jsonify(users_dict), 200

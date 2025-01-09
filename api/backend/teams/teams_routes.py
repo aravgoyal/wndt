@@ -5,8 +5,10 @@ from flask import make_response
 from flask import current_app
 from backend.db_connection import db
 
-from db_files.models import Team
-from db_files.database import db_session
+from backend.db_files.models import Team
+from backend.db_files.models import User
+from backend.db_files.database import db_session
+from sqlalchemy import update
 
 from flask_jwt_extended import jwt_required
 
@@ -14,7 +16,7 @@ from flask_jwt_extended import jwt_required
 teams = Blueprint('teams', __name__)
 
 # Create a new team
-@teams.route('/teams', methods=['POST'])
+@teams.route('/create', methods=['POST'])
 @jwt_required()
 def create_team():
     current_app.logger.info('POST /teams route')
@@ -43,8 +45,9 @@ def view_teams():
     current_app.logger.info('GET /teams route')
 
     teams = Team.query.all()
+    teams_dict = [team.as_dict() for team in teams]
 
-    return jsonify(teams), 200
+    return jsonify(teams_dict), 200
 
 # Join an existing team
 @teams.route('/join', methods=['POST'])
@@ -55,11 +58,16 @@ def join_team():
     user_id = join_info.get('user_id')
     team_id = join_info.get('team_id')
 
-    if not user_id or not team_id:
-        return jsonify({"error": "Missing required fields"}), 400
+    team = Team.query.filter_by(id=team_id).first()
+    if not team:
+        return jsonify({"error": "Team not found", "team_id": team_id}), 404
 
     user = User.query.filter_by(id=user_id).first()
-    user.team_id = team_id
+    if not user:
+        return jsonify({"error": "User not found", "user_id": user_id}), 404
+
+    updated = update(User).where(User.id == user_id).values({"team_id": team_id})
+    db_session.execute(updated)
     db_session.commit()
 
     return make_response(jsonify({'message': 'User successfully joined the team!'}), 200)
@@ -71,5 +79,6 @@ def view_team_members(team_id):
     current_app.logger.info(f'GET /teams/{team_id}/members route')
 
     members = User.query.filter_by(team_id=team_id).all()
+    members_dict = [member.as_dict() for member in members]
 
-    return jsonify(members), 200
+    return jsonify(members_dict), 200

@@ -13,16 +13,16 @@ services:
     hostname: web-api
     volumes: ['./api:/apicode']
     ports:
-      - 4001:4001
+      - 4000:4000
 
   db:
     env_file:
       - ./api/.env
     image: mysql:9
-    container_name: mysql_db-wndt
+    container_name: mysql-wndt
     hostname: db
     volumes:
-      - ./database-files:/docker-entrypoint-initdb.d/:ro
+      - ./api/backend/db_files:/docker-entrypoint-initdb.d/:ro
     ports:
       - 3201:3306
 
