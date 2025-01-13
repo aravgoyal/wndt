@@ -15,8 +15,6 @@ headers = {
     "Authorization": f"Bearer {access_token}"
 }
 
-user_id = st.session_state["user_id"]
-
 visibility = st.selectbox("Visibility", ["public", "private"], key="visibility") # TODO implement public vs private functionality
 frequency = st.number_input("Frequency", key="frequency")
 scenario_type = st.text_input("Scenario Type", key="scenario_type")

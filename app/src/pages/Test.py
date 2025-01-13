@@ -7,7 +7,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # Set up the page layout
-st.write("# View Data: Users, Teams, and Team Members")
+st.write("# View Data")
 
 # Authorization
 access_token = st.session_state.get("access_token", "")
@@ -58,7 +58,16 @@ def get_scenarios():
         st.error(f"Error fetching scenarios: {e}")
         return []
 
-# Display the scenarios as buttons
+def get_points():
+    api_url = "http://web-api-wndt:4000/points/view"
+    try:
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching points: {e}")
+        return []
+
 scenarios = get_scenarios()
 
 if scenarios:
@@ -68,36 +77,36 @@ if scenarios:
 else:
     st.write("No scenarios available.")
 
-# Buttons to fetch data
-col1, col2 = st.columns(2)
+points = get_points()
 
-with col1:
-    if st.button("Fetch All Users"):
-        with st.spinner("Fetching all user info..."):
-            users_data = get_all_users()
-            if "error" in users_data:
-                st.error(users_data["error"])
-            else:
-                if users_data:
-                    df_users = pd.DataFrame(users_data)
-                    st.success("All user info retrieved successfully!")
-                    st.dataframe(df_users, hide_index=True)
-                else:
-                    st.warning("No users found.")
+if points:
+    df_points = pd.DataFrame(points)
+    st.dataframe(df_points)
+   
+else:
+    st.write("No points available.")
 
-with col2:
-    if st.button("Fetch All Teams"):
-        with st.spinner("Fetching all team info..."):
-            teams_data = get_all_teams()
-            if "error" in teams_data:
-                st.error(teams_data["error"])
-            else:
-                if teams_data:
-                    df_teams = pd.DataFrame(teams_data)
-                    st.success("All team info retrieved successfully!")
-                    st.dataframe(df_teams, hide_index=True)
-                else:
-                    st.warning("No teams found.")
+users_data = get_all_users()
+if "error" in users_data:
+    st.error(users_data["error"])
+else:
+    if users_data:
+        df_users = pd.DataFrame(users_data)
+        st.success("All user info retrieved successfully!")
+        st.dataframe(df_users, hide_index=True)
+    else:
+        st.warning("No users found.")
+
+teams_data = get_all_teams()
+if "error" in teams_data:
+    st.error(teams_data["error"])
+else:
+    if teams_data:
+        df_teams = pd.DataFrame(teams_data)
+        st.success("All team info retrieved successfully!")
+        st.dataframe(df_teams, hide_index=True)
+    else:
+        st.warning("No teams found.")
 
 # Input and button for fetching team members
 st.write("### View Members of a Specific Team")

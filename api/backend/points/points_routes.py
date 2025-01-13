@@ -21,10 +21,10 @@ points = Blueprint('points', __name__)
 def create_point():
     current_app.logger.info('POST /points route')
     info = request.json
-    scenario_id = info.get('scenario_id')
-    name = info.get('name')
-    latitude = info.get('latitude')
-    longitude = info.get('longitude')
+    scenario_id = info['scenario_id']
+    name = info['name']
+    latitude = info['latitude']
+    longitude = info['longitude']
 
     if not scenario_id or not name or not latitude or not longitude:
         return jsonify({"error": "Missing required fields"}), 400
