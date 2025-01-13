@@ -48,6 +48,26 @@ def get_team_members(team_id):
         logger.error(f"Error fetching team members for team {team_id}: {e}")
         return {"error": "Failed to connect to the API"}
 
+def get_scenarios():
+    api_url = "http://web-api-wndt:4000/scenarios/view"
+    try:
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching scenarios: {e}")
+        return []
+
+# Display the scenarios as buttons
+scenarios = get_scenarios()
+
+if scenarios:
+    df_scenarios = pd.DataFrame(scenarios)
+    st.dataframe(df_scenarios)
+   
+else:
+    st.write("No scenarios available.")
+
 # Buttons to fetch data
 col1, col2 = st.columns(2)
 

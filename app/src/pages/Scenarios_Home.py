@@ -14,6 +14,8 @@ headers = {
     "Authorization": f"Bearer {access_token}"
 }
 
+user_id = st.session_state['user_id']
+
 # Get all scenarios
 def get_scenarios(api_url):
     try:
@@ -29,7 +31,11 @@ def load_scenarios():
     scenarios = get_scenarios(api_url)
     if scenarios:
         for scenario in scenarios:
-            st.button(f"Scenario {scenario['id']}", key=f"button_{scenario['id']}", type='primary', use_container_width=True)
+            if scenario['visibility'] == 'public' or (scenario['visibility'] == 'private' and scenario['user_id'] == user_id):
+                if st.button(f"Scenario {scenario['id']}", key=f"button_{scenario['id']}", type='primary', use_container_width=True):
+                    st.session_state.scenario_id = scenario['id']
+                    st.switch_page("pages/Scenarios_View.py")
+
     else:
         st.write("No scenarios available.")
 
