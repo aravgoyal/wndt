@@ -23,10 +23,17 @@ def get_scenarios(api_url):
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching scenarios: {e}")
         return []
-    
-api_url = "http://web-api-wndt:4000/scenarios/view"
-scenarios = get_scenarios(api_url)
-if scenarios:
-    st.dataframe(scenarios, hide_index=True)
-else:
-    st.write("No scenarios available.")
+
+def load_scenarios():
+    api_url = "http://web-api-wndt:4000/scenarios/view"
+    scenarios = get_scenarios(api_url)
+    if scenarios:
+        for scenario in scenarios:
+            st.button(f"Scenario {scenario['id']}", key=f"button_{scenario['id']}", type='primary', use_container_width=True)
+    else:
+        st.write("No scenarios available.")
+
+if st.button('Create Scenario', type='secondary'):
+    st.switch_page('pages/Scenarios_Create.py')
+  
+load_scenarios()

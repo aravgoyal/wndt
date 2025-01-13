@@ -93,3 +93,14 @@ def get_all_users():
     users = User.query.all()
     users_dict = [user.as_dict() for user in users]
     return jsonify(users_dict), 200
+
+# Get team id of a user
+@users.route('/team/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_team_id(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    
+    if user:
+        return jsonify({"team_id": user.team_id}), 200
+    
+    return jsonify({"error": "User not found"}), 404
