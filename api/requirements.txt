@@ -13,3 +13,5 @@ Flask-JWT-Extended==4.7.1
 shapely==2.0.6
 geojson==3.2.0
 Flask-SQLAlchemy==3.1.1
+leaflet==0.0.3
+folium==0.19.4

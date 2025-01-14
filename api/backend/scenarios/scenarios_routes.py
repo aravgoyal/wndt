@@ -31,7 +31,7 @@ def create_scenario():
     if not visibility or not user_id:
         return jsonify({"error": "Missing required fields"}), 400
 
-    point = Point(map_center_long, map_center_lat)
+    point = Point(map_center_lat, map_center_long)
     geojson = mapping(point)
 
     scenario = Scenario(

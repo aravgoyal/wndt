@@ -13,3 +13,5 @@ plotly
 seaborn
 scikit-learn
 shap
+folium
+streamlit_folium

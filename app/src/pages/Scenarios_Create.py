@@ -18,8 +18,8 @@ headers = {
 visibility = st.selectbox("Visibility", ["public", "private"], key="visibility") # TODO implement public vs private functionality
 frequency = st.number_input("Frequency", key="frequency")
 scenario_type = st.text_input("Scenario Type", key="scenario_type")
-map_center_long = st.number_input("Map Center Longitude", format="%.6f", key="map_center_long")
 map_center_lat = st.number_input("Map Center Latitude", format="%.6f", key="map_center_lat")
+map_center_long = st.number_input("Map Center Longitude", format="%.6f", key="map_center_long")
 map_size = st.number_input("Map Size", min_value=1, key="map_size")
 user_id = st.session_state["user_id"]
 

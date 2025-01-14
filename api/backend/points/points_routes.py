@@ -29,7 +29,7 @@ def create_point():
     if not scenario_id or not name or not latitude or not longitude:
         return jsonify({"error": "Missing required fields"}), 400
 
-    geom = Point(longitude, latitude)
+    geom = Point(latitude, longitude)
     geojson = mapping(geom)
 
     point = GeoPoint(
@@ -78,7 +78,7 @@ def update_point(point_id):
     if not name or not latitude or not longitude:
         return jsonify({"error": "Missing required fields"}), 400
 
-    geom = Point(longitude, latitude)
+    geom = Point(latitude, longitude)
     geojson = mapping(geom)
     updated = update(GeoPoint).where(GeoPoint.id == point_id).values(name=name, geom=geojson)
 
