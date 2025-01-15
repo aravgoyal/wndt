@@ -33,9 +33,8 @@ if submitted:
     # Send data to the API
     try:
         response = requests.post('http://web-api-wndt:4000/teams/join', headers=headers, json=team_data)
-        if response.status_code == 201:
+        if response.status_code == 200:
             st.success("Team joined successfully!")
-            load_team_members()
         else:
             st.error(f"Error: {response.json().get('error', 'Unknown error')}")
     except Exception as e:

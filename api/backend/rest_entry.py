@@ -14,6 +14,7 @@ from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
+from datetime import timedelta
 
 def create_app():
     app = Flask(__name__)
@@ -23,6 +24,7 @@ def create_app():
     app.config['SECRET_KEY'] = 'W!0TS3CReTk3Y.!'
     jwt = JWTManager(app)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    app.config['ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
     app.config['MYSQL_DATABASE_USER'] = 'root'
     app.config['MYSQL_DATABASE_USER'] = os.getenv('DB_USER')

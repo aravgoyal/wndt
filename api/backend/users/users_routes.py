@@ -3,17 +3,14 @@ from flask import request
 from flask import jsonify
 from flask import make_response
 from flask import current_app
-
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import get_jwt_identity
-from flask_jwt_extended import jwt_required
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import create_access_token, jwt_required
 
 import hashlib
 from backend.db_connection import db
 from backend.db_files.database import db_session
 from backend.db_files.models import User
 from sqlalchemy.exc import IntegrityError
+from datetime import timedelta
 
 # Create a new Blueprint for users
 users = Blueprint('users', __name__)
@@ -70,7 +67,7 @@ def login_user():
     user = User.query.filter_by(email=email).first()
     
     if user and user.password == hash_password(password):
-        access_token = create_access_token(identity=email)
+        access_token = create_access_token(identity=email, expires_delta=timedelta(hours=1))
         return make_response(jsonify({"message": "Login successful!", "access_token": access_token, "user_id": user.id, "first_name": user.first_name}), 200)
     
     return jsonify({"error": "Invalid email or password"}), 401
